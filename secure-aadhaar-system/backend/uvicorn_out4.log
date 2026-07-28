@@ -1,0 +1,10 @@
+INFO:     ::1:57083 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     ::1:57306 - "POST /api/auth/signup HTTP/1.1" 200 OK
+INFO:     ::1:57306 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     ::1:57306 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+INFO:     ::1:57306 - "POST /api/aadhaar HTTP/1.1" 401 Unauthorized
+INFO:     ::1:57306 - "POST /api/aadhaar HTTP/1.1" 401 Unauthorized
+INFO:     ::1:57306 - "GET /api/my-submissions HTTP/1.1" 401 Unauthorized
+INFO:     ::1:60307 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     ::1:51047 - "POST /api/admin/login HTTP/1.1" 200 OK
+INFO:     ::1:53078 - "GET /openapi.json HTTP/1.1" 200 OK
