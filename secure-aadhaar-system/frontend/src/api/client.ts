@@ -57,10 +57,14 @@ export interface DecryptResponse {
   aadhaar_number: string;
 }
 
-export function submitAadhaar(aadhaarNumber: string): Promise<SubmitAadhaarResponse> {
+export function submitAadhaar(aadhaarNumber: string, consent: boolean): Promise<SubmitAadhaarResponse> {
   return request<SubmitAadhaarResponse>("/api/aadhaar", {
     method: "POST",
-    body: JSON.stringify({ aadhaar_number: aadhaarNumber }),
+    body: JSON.stringify({
+      aadhaar_number: aadhaarNumber,
+      consent,
+      ts: new Date().toISOString(),
+    }),
   });
 }
 
@@ -202,4 +206,21 @@ export function getUserMe(): Promise<UserMeResponse> {
 
 export function listMySubmissions(): Promise<MySubmissionListItem[]> {
   return request<MySubmissionListItem[]>("/api/my-submissions");
+}
+
+// ============================================================================
+// Admin: date-range audit report (backend-1 only)
+// ============================================================================
+
+export interface AuditReportRow {
+  date: string;
+  unique_reference_no: string | null;
+  reference_id: string | null;
+  masked_aadhaar_no: string | null;
+  request_datetime: string | null;
+}
+
+export function getAuditReport(fromDate: string, toDate: string): Promise<AuditReportRow[]> {
+  const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+  return request<AuditReportRow[]>(`/api/admin/audit-report?${params.toString()}`);
 }

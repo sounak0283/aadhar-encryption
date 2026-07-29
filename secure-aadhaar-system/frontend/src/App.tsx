@@ -1,4 +1,5 @@
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import AdminAuditReport from "./pages/AdminAuditReport";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import AdminManagement from "./pages/AdminManagement";
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/admin/register" element={<AdminRegister />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/manage" element={<AdminManagement />} />
+        <Route path="/admin/audit-report" element={<AdminAuditReport />} />
       </Routes>
     </BrowserRouter>
   );

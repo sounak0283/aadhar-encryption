@@ -142,6 +142,9 @@ export default function AdminDashboard() {
               <button type="button">Manage Admins</button>
             </Link>
           )}
+          <Link to="/admin/audit-report">
+            <button type="button">Audit Report</button>
+          </Link>
           <button onClick={handleLogout}>Log Out</button>
         </div>
       </div>

@@ -1,0 +1,12 @@
+INFO:     ::1:53168 - "GET /health HTTP/1.1" 200 OK
+INFO:     ::1:53169 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     ::1:53171 - "POST /api/admin/login HTTP/1.1" 200 OK
+INFO:     ::1:53175 - "POST /api/auth/signup HTTP/1.1" 200 OK
+INFO:     ::1:53176 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     ::1:53177 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     ::1:53178 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:53179 - "GET /api/admin/audit-report?from_date=2026-07-29&to_date=2026-07-29 HTTP/1.1" 200 OK
+INFO:     ::1:53184 - "GET /api/admin/audit-report?from_date=2026-07-27&to_date=2026-07-29 HTTP/1.1" 200 OK
+INFO:     ::1:53185 - "GET /api/admin/audit-report?from_date=2026-07-29&to_date=2026-07-01 HTTP/1.1" 400 Bad Request
+INFO:     ::1:53186 - "GET /api/admin/audit-report?from_date=2026-07-01&to_date=2026-07-29 HTTP/1.1" 401 Unauthorized
+INFO:     ::1:60731 - "GET /health HTTP/1.1" 200 OK

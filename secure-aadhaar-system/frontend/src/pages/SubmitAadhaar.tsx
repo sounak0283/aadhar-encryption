@@ -11,6 +11,7 @@ export default function SubmitAadhaar() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [me, setMe] = useState<UserMeResponse | null>(null);
   const [value, setValue] = useState("");
+  const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [referenceId, setReferenceId] = useState<string | null>(null);
@@ -34,11 +35,16 @@ export default function SubmitAadhaar() {
       setMessage("Enter exactly 12 digits.");
       return;
     }
+    if (!consent) {
+      setStatus("error");
+      setMessage("You must give consent before submitting.");
+      return;
+    }
 
     setStatus("submitting");
     setMessage("");
     try {
-      const result = await submitAadhaar(value);
+      const result = await submitAadhaar(value, consent);
       setReferenceId(result.reference_id);
       setMaskedPreview(result.masked_preview);
       setStatus("success");
@@ -52,7 +58,9 @@ export default function SubmitAadhaar() {
       setMessage(
         err instanceof ApiError
           ? err.status === 400
-            ? "That doesn't look like a valid Aadhaar number."
+            ? err.message === "request_expired" || err.message === "timestamp_in_future"
+              ? "Your device clock looks out of sync — refresh and try again."
+              : "That doesn't look like a valid Aadhaar number."
             : "Something went wrong. Please try again."
           : "Could not reach the server. Please try again.",
       );
@@ -64,6 +72,7 @@ export default function SubmitAadhaar() {
     setReferenceId(null);
     setMaskedPreview(null);
     setMessage("");
+    setConsent(false);
   }
 
   async function handleLogout() {
@@ -124,8 +133,21 @@ export default function SubmitAadhaar() {
               onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))}
               disabled={status === "submitting"}
             />
+            <label style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", marginTop: "0.75rem" }}>
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                disabled={status === "submitting"}
+                style={{ marginTop: "0.2rem" }}
+              />
+              <span>
+                I consent to my Aadhaar number being encrypted and stored for the purpose of this
+                submission.
+              </span>
+            </label>
             {status === "error" && <p className="error-text">{message}</p>}
-            <button type="submit" disabled={status === "submitting" || value.length !== 12}>
+            <button type="submit" disabled={status === "submitting" || value.length !== 12 || !consent}>
               {status === "submitting" ? "Submitting..." : "Submit"}
             </button>
           </form>
