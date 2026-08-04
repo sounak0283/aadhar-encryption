@@ -214,7 +214,6 @@ export function listMySubmissions(): Promise<MySubmissionListItem[]> {
 
 export interface AuditReportRow {
   date: string;
-  unique_reference_no: string | null;
   reference_id: string | null;
   masked_aadhaar_no: string | null;
   request_datetime: string | null;
@@ -223,4 +222,49 @@ export interface AuditReportRow {
 export function getAuditReport(fromDate: string, toDate: string): Promise<AuditReportRow[]> {
   const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
   return request<AuditReportRow[]>(`/api/admin/audit-report?${params.toString()}`);
+}
+
+export const AUDIT_REPORT_PDF_COLUMNS = [
+  { key: "date", label: "Date" },
+  { key: "reference_id", label: "Reference ID" },
+  { key: "masked_aadhaar_no", label: "Masked Aadhaar No" },
+  { key: "request_datetime", label: "Request Datetime (IST)" },
+] as const;
+
+export type AuditReportPdfColumn = (typeof AUDIT_REPORT_PDF_COLUMNS)[number]["key"];
+
+export async function downloadAuditReportPdf(
+  fromDate: string,
+  toDate: string,
+  columns: AuditReportPdfColumn[],
+): Promise<Blob> {
+  const params = new URLSearchParams({ from_date: fromDate, to_date: toDate, columns: columns.join(",") });
+  const response = await fetch(`${API_BASE_URL}/api/admin/audit-report/pdf?${params.toString()}`, {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    let detail = response.statusText;
+    try {
+      const body = (await response.json()) as { detail?: string };
+      detail = body.detail ?? detail;
+    } catch {
+      // no JSON body to read
+    }
+    throw new ApiError(response.status, detail);
+  }
+  return response.blob();
+}
+
+export interface AuditLogEvent {
+  ts: string;
+  action: string;
+  result: string;
+  username: string | null;
+  container_id: string | null;
+}
+
+export function getAuditLog(fromDate: string, toDate: string): Promise<AuditLogEvent[]> {
+  const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
+  return request<AuditLogEvent[]>(`/api/admin/audit-log?${params.toString()}`);
 }

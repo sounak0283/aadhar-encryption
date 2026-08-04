@@ -33,6 +33,30 @@ def get_app_totp_key() -> bytes:
     return key
 
 
+def get_token_hmac_key() -> bytes:
+    """32-byte key used only to compute the deterministic per-Aadhaar-number
+    lookup tag (see app/crypto/token_utils.py) — analogous to UIDAI's UID
+    Token: same Aadhaar number always maps to the same reference_id for this
+    deployment, without the tag itself revealing or being reversible to the
+    Aadhaar number. Deliberately a separate key from APP_TOTP_KEY so rotating
+    one never affects the other.
+    """
+    raw = os.getenv("TOKEN_HMAC_KEY")
+    if raw is None:
+        raise EnvironmentError(
+            "TOKEN_HMAC_KEY not set. Create a .env file with TOKEN_HMAC_KEY=<32-byte base64 key> "
+            "(generate one with: python -c \"import nacl.utils, base64; "
+            "print(base64.b64encode(nacl.utils.random(32)).decode())\")"
+        )
+    try:
+        key = base64.b64decode(raw, validate=True)
+    except Exception as exc:
+        raise EnvironmentError("TOKEN_HMAC_KEY must be valid base64.") from exc
+    if len(key) != 32:
+        raise EnvironmentError("TOKEN_HMAC_KEY must decode to exactly 32 bytes.")
+    return key
+
+
 def get_mongo_uri() -> str:
     return os.getenv("MONGO_URI", "mongodb://localhost:27017")
 

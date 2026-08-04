@@ -1,9 +1,8 @@
 """Admin login / register / manage sub-admins / list / decrypt / logout endpoints."""
 import secrets
+from datetime import date
 
-from bson import ObjectId
-from bson.errors import InvalidId
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response
 
 from app import db
 from app.config import get_admin_setup_token, get_app_totp_key
@@ -22,6 +21,7 @@ from app.models.admin_identity import (
     RegisterStartResponse,
     RegisterStatusResponse,
 )
+from app.models.audit_report import AuditLogEvent, AuditReportRow
 from app.models.container import DecryptResponse, SubmissionListItem
 from app.providers.identity_provider import load_identity_provider
 from app.rate_limit import limiter
@@ -31,6 +31,8 @@ from app.services import (
     admin_registration_service,
     admin_session,
     admins_service,
+    audit_pdf_service,
+    audit_report_service,
     audit_service,
     decrypt_service,
 )
@@ -102,16 +104,19 @@ async def login(payload: AdminLoginRequest, response: Response):
     if admin is None or admin["status"] != "active":
         # Same generic message as a wrong password — don't reveal whether the
         # username exists at all.
+        await audit_service.record_admin_login(payload.username, "invalid_credentials")
         raise HTTPException(status_code=401, detail="invalid credentials")
 
     totp_secret = totp_utils.decrypt_totp_secret(admin["totp_secret_encrypted"], get_app_totp_key())
     if not totp_utils.verify_totp_code(totp_secret, payload.totp_code):
+        await audit_service.record_admin_login(payload.username, "invalid_credentials")
         raise HTTPException(status_code=401, detail="invalid credentials")
 
     provider = load_identity_provider(admin)
     try:
         unlocked = provider.unlock(payload.password)
     except BadTagError:
+        await audit_service.record_admin_login(payload.username, "invalid_credentials")
         raise HTTPException(status_code=401, detail="invalid credentials")
 
     token = admin_session.create_session(
@@ -125,6 +130,7 @@ async def login(payload: AdminLoginRequest, response: Response):
         samesite="strict",
         max_age=admin_session.SESSION_TTL_SECONDS,
     )
+    await audit_service.record_admin_login(payload.username, "success")
     return {"status": "ok"}
 
 
@@ -139,7 +145,10 @@ async def logout(
     admin_session_token: str | None = Cookie(default=None, alias=SESSION_COOKIE_NAME),
 ):
     if admin_session_token:
+        session = admin_session.get_session(admin_session_token)
         admin_session.destroy_session(admin_session_token)
+        if session is not None:
+            await audit_service.record_admin_logout(session.username)
     response.delete_cookie(SESSION_COOKIE_NAME)
     return {"status": "ok"}
 
@@ -220,11 +229,64 @@ async def list_submissions(session: admin_session.Session = Depends(require_admi
     async for doc in db.containers_collection().find():
         items.append(
             SubmissionListItem(
-                id=str(doc["_id"]), created_at=db.as_utc(doc["created_at"]), masked_preview=doc["masked_preview"]
+                id=doc["reference_id"], created_at=db.as_utc(doc["created_at"]), masked_preview=doc["masked_preview"]
             )
         )
     items.sort(key=lambda item: item.created_at, reverse=True)
     return items
+
+
+@router.get("/audit-report", response_model=list[AuditReportRow])
+async def audit_report(
+    from_date: date = Query(..., description="Start of the date range, inclusive, YYYY-MM-DD"),
+    to_date: date = Query(..., description="End of the date range, inclusive, YYYY-MM-DD"),
+    session: admin_session.Session = Depends(require_admin_session),
+):
+    try:
+        rows = await audit_report_service.generate_report(from_date, to_date)
+    except audit_report_service.InvalidDateRangeError:
+        raise HTTPException(status_code=400, detail="from_date must not be after to_date")
+    return rows
+
+
+@router.get("/audit-report/pdf")
+async def audit_report_pdf(
+    from_date: date = Query(..., description="Start of the date range, inclusive, YYYY-MM-DD"),
+    to_date: date = Query(..., description="End of the date range, inclusive, YYYY-MM-DD"),
+    columns: str | None = Query(
+        None,
+        description="Comma-separated subset of date,reference_id,masked_aadhaar_no,request_datetime. Defaults to all four.",
+    ),
+    session: admin_session.Session = Depends(require_admin_session),
+):
+    selected_columns = [c.strip() for c in columns.split(",") if c.strip()] if columns else None
+    try:
+        pdf_bytes = await audit_pdf_service.generate_pdf(from_date, to_date, columns=selected_columns)
+    except audit_report_service.InvalidDateRangeError:
+        raise HTTPException(status_code=400, detail="from_date must not be after to_date")
+    except audit_pdf_service.InvalidColumnError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    filename = f"audit-report_{from_date.isoformat()}_{to_date.isoformat()}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/audit-log", response_model=list[AuditLogEvent])
+async def audit_log(
+    from_date: date = Query(..., description="Start of the date range, inclusive, YYYY-MM-DD"),
+    to_date: date = Query(..., description="End of the date range, inclusive, YYYY-MM-DD"),
+    session: admin_session.Session = Depends(require_admin_session),
+):
+    """Every recorded admin/user login, logout, submission, and decrypt event
+    within the range, newest first — the real per-hit timestamps behind the
+    submission-only audit-report above."""
+    if from_date > to_date:
+        raise HTTPException(status_code=400, detail="from_date must not be after to_date")
+    return await audit_service.list_events(from_date, to_date)
 
 
 @router.post("/submissions/{submission_id}/decrypt", response_model=DecryptResponse)
@@ -233,12 +295,7 @@ async def decrypt_submission(
     response: Response,
     session: admin_session.Session = Depends(require_admin_session),
 ):
-    try:
-        object_id = ObjectId(submission_id)
-    except InvalidId:
-        raise HTTPException(status_code=404, detail="not found")
-
-    doc = await db.containers_collection().find_one({"_id": object_id})
+    doc = await db.containers_collection().find_one({"reference_id": submission_id})
     if doc is None:
         raise HTTPException(status_code=404, detail="not found")
 

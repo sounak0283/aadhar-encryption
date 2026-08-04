@@ -1,0 +1,15 @@
+INFO:     ::1:60677 - "GET /health HTTP/1.1" 200 OK
+INFO:     ::1:60678 - "POST /api/admin/login HTTP/1.1" 200 OK
+INFO:     ::1:60682 - "GET /api/admin/audit-report/pdf?from_date=2026-07-25&to_date=2026-07-30 HTTP/1.1" 200 OK
+INFO:     ::1:54201 - "GET /api/admin/audit-report/pdf?from_date=2026-07-25&to_date=2026-07-30 HTTP/1.1" 401 Unauthorized
+INFO:     ::1:54207 - "POST /api/admin/login HTTP/1.1" 200 OK
+INFO:     ::1:53718 - "GET /api/admin/audit-report/pdf?from_date=2026-07-25&to_date=2026-07-30 HTTP/1.1" 200 OK
+INFO:     ::1:61138 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     ::1:54729 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:63762 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:58316 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:58319 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:59309 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:55697 - "POST /api/admin/login HTTP/1.1" 200 OK
+INFO:     ::1:55701 - "POST /api/admin/audit-report/pdf?from_date=2026-07-25&to_date=2026-07-30 HTTP/1.1" 405 Method Not Allowed
+INFO:     ::1:55704 - "GET /api/admin/audit-report/pdf?from_date=2026-07-25&to_date=2026-07-30 HTTP/1.1" 200 OK

@@ -1,5 +1,11 @@
 """Integration tests for /api/auth/* (app.routers.auth) — regular user signup/login/logout/me."""
+from datetime import datetime, timezone
+
 from app.validation import generate_synthetic_aadhaar
+
+
+def _submit_body(number: str) -> dict:
+    return {"aadhaar_number": number, "consent": True, "ts": datetime.now(timezone.utc).isoformat()}
 
 USERNAME = "alice"
 PASSWORD = "a-strong-user-password"
@@ -81,14 +87,14 @@ def test_my_submissions_only_shows_own_records(client, fake_containers, fake_use
     client.post("/api/auth/signup", json={"username": "userA", "password": "password-a-123"})
     client.post("/api/auth/login", json={"username": "userA", "password": "password-a-123"})
     number_a = generate_synthetic_aadhaar("12345678901")
-    ref_a = client.post("/api/aadhaar", json={"aadhaar_number": number_a}).json()["reference_id"]
+    ref_a = client.post("/api/aadhaar", json=_submit_body(number_a)).json()["reference_id"]
     client.post("/api/auth/logout")
 
     # user B submits a different record
     client.post("/api/auth/signup", json={"username": "userB", "password": "password-b-123"})
     client.post("/api/auth/login", json={"username": "userB", "password": "password-b-123"})
     number_b = generate_synthetic_aadhaar("98765432101")
-    client.post("/api/aadhaar", json={"aadhaar_number": number_b})
+    client.post("/api/aadhaar", json=_submit_body(number_b))
 
     # user B's "my submissions" should show only their own record
     resp = client.get("/api/my-submissions")

@@ -1,4 +1,6 @@
 """Integration tests for /api/admin/* (app.routers.admin)."""
+from datetime import datetime, timezone
+
 from app.validation import generate_synthetic_aadhaar
 
 
@@ -22,7 +24,10 @@ def _submit(client, number):
     assert client.post("/api/auth/signup", json={"username": username, "password": password}).status_code == 200
     assert client.post("/api/auth/login", json={"username": username, "password": password}).status_code == 200
 
-    resp = client.post("/api/aadhaar", json={"aadhaar_number": number})
+    resp = client.post(
+        "/api/aadhaar",
+        json={"aadhaar_number": number, "consent": True, "ts": datetime.now(timezone.utc).isoformat()},
+    )
     assert resp.status_code == 200
     return resp.json()["reference_id"]
 
@@ -89,8 +94,9 @@ def test_full_submit_login_list_decrypt_flow(client, fake_containers, fake_audit
     assert decrypt_resp.json()["aadhaar_number"] == number
     assert decrypt_resp.headers["cache-control"] == "no-store"
 
-    assert len(fake_audit_log._docs) == 1
-    audit_entry = next(iter(fake_audit_log._docs.values()))
+    decrypt_entries = [doc for doc in fake_audit_log._docs.values() if doc["action"] == "decrypt"]
+    assert len(decrypt_entries) == 1
+    audit_entry = decrypt_entries[0]
     assert audit_entry["result"] == "success"
     assert audit_entry["admin_username"] == master_admin["username"]
     assert number not in str(audit_entry)

@@ -147,7 +147,6 @@ async def test_new_submissions_after_sub_admin_created_are_wrapped_for_both(mast
     new_admin_id, _ = await admin_management_service.confirm(master_admin["id"], unlocked, token, pyotp.TOTP(secret).now())
 
     reference_id, _ = await submission_service.encrypt_and_store("123456789012", submitted_by="test-submitter-id")
-    from bson import ObjectId
 
-    doc = fake_containers._docs[ObjectId(reference_id)]
+    doc = next(d for d in fake_containers._docs.values() if d["reference_id"] == reference_id)
     assert set(doc["wrapped_deks"].keys()) == {master_admin["id"], new_admin_id}

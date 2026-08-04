@@ -1,0 +1,666 @@
+{
+  "info": {
+    "_postman_id": "a3f1c9d2-4b7e-4f6a-9c2d-1e6f8b0a2c33",
+    "name": "Secure Aadhaar Transmission System",
+    "description": "Full backend walkthrough — user auth, submission, admin registration, admin session, sub-admin management, and audit reporting/logging. Mirrors docs/POSTMAN_TESTING_GUIDE.md Flows A-E.\n\nImport the sibling environment file too, and select it before running. Auth is httpOnly session cookies (user_session / admin_session) — Postman's desktop app stores and resends these automatically, just like a browser, so nothing needs to be copied into headers manually.\n\nEndpoints requiring a TOTP code (`admin/login`, `admin/register/confirm`, `admin/admins/confirm`) need a live 6-digit code typed into the `totp_code` environment variable immediately before sending — it rotates every 30 seconds.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Body is {status: ok}', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Flow A - User auth + submission",
+      "item": [
+        {
+          "name": "A1 - Sign up",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 (or 409 if already signed up)', () => {",
+                  "    pm.expect([200, 409]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{user_username}}\",\n  \"password\": \"{{user_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/signup", "host": ["{{base_url}}"], "path": ["api", "auth", "signup"] }
+          },
+          "response": []
+        },
+        {
+          "name": "A2 - Log in",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('user_session cookie is set', () => {",
+                  "    pm.expect(pm.cookies.has('user_session')).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{user_username}}\",\n  \"password\": \"{{user_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] }
+          },
+          "response": []
+        },
+        {
+          "name": "A3 - Confirm logged in (me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('username matches', () => {",
+                  "    pm.expect(pm.response.json().username).to.eql(pm.environment.get('user_username'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api", "auth", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "A4 - Submit Aadhaar number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.environment.set('reference_id', pm.response.json().reference_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"aadhaar_number\": \"102938475615\",\n  \"consent\": true,\n  \"ts\": \"{{$isoTimestamp}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/aadhaar", "host": ["{{base_url}}"], "path": ["api", "aadhaar"] },
+            "description": "consent must be exactly true. ts uses Postman's built-in {{$isoTimestamp}} dynamic variable so it's always fresh — the server rejects requests more than 5 minutes old or timestamped in the future. Other valid test Aadhaar numbers: 564738291043, 999888777669."
+          },
+          "response": []
+        },
+        {
+          "name": "A5 - List my submissions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/my-submissions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "my-submissions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "A6 - Log out",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/auth/logout", "host": ["{{base_url}}"], "path": ["api", "auth", "logout"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Flow B - First admin (master) registration",
+      "item": [
+        {
+          "name": "B1 - Registration status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/register/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "register", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "B2 - Start registration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 (or 409 if an admin already exists)', () => {",
+                  "    pm.expect([200, 409]).to.include(pm.response.code);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.environment.set('registration_token', body.registration_token);",
+                  "    pm.environment.set('manual_secret', body.manual_secret);",
+                  "    console.log('Enter this secret into your authenticator app:', body.manual_secret);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"setup_token\": \"{{setup_token}}\",\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/register/start",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "register", "start"]
+            },
+            "description": "setup_token must match ADMIN_SETUP_TOKEN in backend/.env. After sending, check the Postman console (View > Show Postman Console) for manual_secret, or decode qr_code_png_base64 from the response body as a data:image/png;base64,... URL in a browser to scan it."
+          },
+          "response": []
+        },
+        {
+          "name": "B3 - Confirm registration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registration_token\": \"{{registration_token}}\",\n  \"totp_code\": \"{{totp_code}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/register/confirm",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "register", "confirm"]
+            },
+            "description": "Fill totp_code with a live 6-digit code from your authenticator app (seeded with manual_secret from B2) and send immediately — it rotates every 30s."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Flow C - Admin session + submissions + decrypt",
+      "item": [
+        {
+          "name": "C1 - Admin log in",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('admin_session cookie is set', () => {",
+                  "    pm.expect(pm.cookies.has('admin_session')).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\",\n  \"totp_code\": \"{{totp_code}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/admin/login", "host": ["{{base_url}}"], "path": ["api", "admin", "login"] },
+            "description": "Fill totp_code with a fresh code right before sending. The admin session cookie is only valid for 5 minutes idle, so don't dawdle between the rest of Flow C."
+          },
+          "response": []
+        },
+        {
+          "name": "C2 - Confirm identity (me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/admin/me", "host": ["{{base_url}}"], "path": ["api", "admin", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "C3 - List all submissions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/submissions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "submissions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "C4 - Decrypt a submission",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/submissions/{{reference_id}}/decrypt",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "submissions", "{{reference_id}}", "decrypt"]
+            },
+            "description": "reference_id is set automatically by Flow A4. This is the one moment the real Aadhaar number appears in a response."
+          },
+          "response": []
+        },
+        {
+          "name": "C5 - Admin log out",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/admin/logout", "host": ["{{base_url}}"], "path": ["api", "admin", "logout"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Flow D - Sub-admin management (master only)",
+      "item": [
+        {
+          "name": "D1 - Start sub-admin creation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.environment.set('registration_token', body.registration_token);",
+                  "    pm.environment.set('manual_secret', body.manual_secret);",
+                  "    console.log('Enter this secret into the sub-admin\\'s authenticator app:', body.manual_secret);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{sub_admin_username}}\",\n  \"password\": \"{{sub_admin_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/admins/start",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "admins", "start"]
+            },
+            "description": "Requires an active admin_session with role=master (run Flow C1 first)."
+          },
+          "response": []
+        },
+        {
+          "name": "D2 - Confirm sub-admin creation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.environment.set('sub_admin_id', pm.response.json().admin_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registration_token\": \"{{registration_token}}\",\n  \"totp_code\": \"{{totp_code}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/admins/confirm",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "admins", "confirm"]
+            },
+            "description": "Fill totp_code with a fresh code from the sub-admin's authenticator (seeded with manual_secret from D1). Response includes containers_granted — how many pre-existing records were retroactively re-wrapped for this new sub-admin."
+          },
+          "response": []
+        },
+        {
+          "name": "D3 - List all admins",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/admin/admins", "host": ["{{base_url}}"], "path": ["api", "admin", "admins"] }
+          },
+          "response": []
+        },
+        {
+          "name": "D4 - Log out master, log in as sub-admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{sub_admin_username}}\",\n  \"password\": \"{{sub_admin_password}}\",\n  \"totp_code\": \"{{totp_code}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/admin/login", "host": ["{{base_url}}"], "path": ["api", "admin", "login"] },
+            "description": "Run C5 (admin logout) first, then fill totp_code with a fresh code from the SUB-ADMIN's authenticator before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "D5 - Sub-admin decrypts a pre-existing record",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/submissions/{{reference_id}}/decrypt",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "submissions", "{{reference_id}}", "decrypt"]
+            },
+            "description": "Proves the retroactive re-wrap from D2 actually works: this record was submitted before the sub-admin existed."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Flow E - Audit report, PDF export, and audit log",
+      "item": [
+        {
+          "name": "E1 - Date-range hit report (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit-report?from_date={{from_date}}&to_date={{to_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "audit-report"],
+              "query": [
+                { "key": "from_date", "value": "{{from_date}}" },
+                { "key": "to_date", "value": "{{to_date}}" }
+              ]
+            },
+            "description": "Requires any admin session (master or sub). One row per HIT, not per record: a record submitted once and later decrypted twice shows up as 3 rows, each with its own request_datetime. Dates with zero hits get a single placeholder row."
+          },
+          "response": []
+        },
+        {
+          "name": "E2 - Date-range report as PDF (all columns)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type is application/pdf', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/pdf');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit-report/pdf?from_date={{from_date}}&to_date={{to_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "audit-report", "pdf"],
+              "query": [
+                { "key": "from_date", "value": "{{from_date}}" },
+                { "key": "to_date", "value": "{{to_date}}" }
+              ]
+            },
+            "description": "Binary PDF response — in Postman, use the Send and Download button (dropdown next to Send) to save it to disk instead of viewing raw bytes."
+          },
+          "response": []
+        },
+        {
+          "name": "E3 - Date-range report as PDF (selected columns)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type is application/pdf', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/pdf');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit-report/pdf?from_date={{from_date}}&to_date={{to_date}}&columns=date,masked_aadhaar_no,request_datetime",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "audit-report", "pdf"],
+              "query": [
+                { "key": "from_date", "value": "{{from_date}}" },
+                { "key": "to_date", "value": "{{to_date}}" },
+                { "key": "columns", "value": "date,masked_aadhaar_no,request_datetime" }
+              ]
+            },
+            "description": "columns is a comma-separated subset of: date, reference_id, masked_aadhaar_no, request_datetime. Omit the param entirely for all four (see E2)."
+          },
+          "response": []
+        },
+        {
+          "name": "E4 - Audit log (every login/logout/submit/decrypt event)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('events are newest first', () => {",
+                  "    const events = pm.response.json();",
+                  "    const timestamps = events.map(e => e.ts);",
+                  "    pm.expect(timestamps).to.eql([...timestamps].sort().reverse());",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit-log?from_date={{from_date}}&to_date={{to_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "audit-log"],
+              "query": [
+                { "key": "from_date", "value": "{{from_date}}" },
+                { "key": "to_date", "value": "{{to_date}}" }
+              ]
+            },
+            "description": "Real per-hit timestamps for admin_login, admin_logout, user_login, user_logout, submit, and decrypt events — this is the fix for 'the audit report only shows the last sign-in, not every timestamp.' Run this after Flows A-D so there's something to see."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

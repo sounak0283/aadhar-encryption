@@ -1,0 +1,12 @@
+INFO:     ::1:53814 - "GET /health HTTP/1.1" 200 OK
+INFO:     ::1:53817 - "POST /api/admin/login HTTP/1.1" 200 OK
+INFO:     ::1:53821 - "POST /api/auth/signup HTTP/1.1" 200 OK
+INFO:     ::1:53822 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     ::1:53823 - "POST /api/aadhaar HTTP/1.1" 500 Internal Server Error
+INFO:     ::1:53824 - "POST /api/aadhaar HTTP/1.1" 500 Internal Server Error
+INFO:     ::1:53825 - "POST /api/admin/submissions//decrypt HTTP/1.1" 404 Not Found
+INFO:     ::1:53826 - "GET /api/admin/submissions HTTP/1.1" 500 Internal Server Error
+INFO:     ::1:53856 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:53857 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:53858 - "POST /api/admin/submissions/90BAA516A045/decrypt HTTP/1.1" 200 OK
+INFO:     ::1:53859 - "GET /api/admin/submissions HTTP/1.1" 200 OK

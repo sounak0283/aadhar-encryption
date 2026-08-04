@@ -5,7 +5,7 @@ from app.crypto import password_utils
 from app.deps import USER_SESSION_COOKIE_NAME, require_user_session
 from app.models.user import UserLoginRequest, UserMeResponse, UserSignupRequest
 from app.rate_limit import limiter
-from app.services import user_session, users_service
+from app.services import audit_service, user_session, users_service
 
 router = APIRouter(prefix="/api/auth")
 
@@ -25,9 +25,11 @@ async def signup(request: Request, payload: UserSignupRequest):
 async def login(request: Request, payload: UserLoginRequest, response: Response):
     user = await users_service.get_by_username(payload.username)
     if user is None or user["status"] != "active":
+        await audit_service.record_user_login(payload.username, "invalid_credentials")
         raise HTTPException(status_code=401, detail="invalid credentials")
 
     if not password_utils.verify_password(payload.password, user["password_hash"]):
+        await audit_service.record_user_login(payload.username, "invalid_credentials")
         raise HTTPException(status_code=401, detail="invalid credentials")
 
     token = user_session.create_session(user_id=str(user["_id"]), username=user["username"])
@@ -39,6 +41,7 @@ async def login(request: Request, payload: UserLoginRequest, response: Response)
         samesite="strict",
         max_age=user_session.SESSION_TTL_SECONDS,
     )
+    await audit_service.record_user_login(payload.username, "success")
     return {"status": "ok"}
 
 
@@ -53,6 +56,9 @@ async def logout(
     user_session_token: str | None = Cookie(default=None, alias=USER_SESSION_COOKIE_NAME),
 ):
     if user_session_token:
+        session = user_session.get_session(user_session_token)
         user_session.destroy_session(user_session_token)
+        if session is not None:
+            await audit_service.record_user_logout(session.username)
     response.delete_cookie(USER_SESSION_COOKIE_NAME)
     return {"status": "ok"}

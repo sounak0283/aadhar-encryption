@@ -20,7 +20,8 @@ class FakeCursor:
     def __init__(self, docs):
         self._docs = list(docs)
 
-    def sort(self, *args, **kwargs):
+    def sort(self, key, direction=1):
+        self._docs.sort(key=lambda doc: doc.get(key), reverse=(direction < 0))
         return self
 
     def __aiter__(self):
@@ -60,9 +61,26 @@ class FakeAsyncCollection:
         for k in update.get("$unset", {}):
             doc.pop(k, None)
 
+    @staticmethod
+    def _matches(doc_value, condition):
+        if isinstance(condition, dict):
+            for op, operand in condition.items():
+                if op == "$gte" and not (doc_value >= operand):
+                    return False
+                elif op == "$lte" and not (doc_value <= operand):
+                    return False
+                elif op == "$gt" and not (doc_value > operand):
+                    return False
+                elif op == "$lt" and not (doc_value < operand):
+                    return False
+                elif op not in ("$gte", "$lte", "$gt", "$lt"):
+                    raise NotImplementedError(f"FakeAsyncCollection doesn't support operator {op!r}")
+            return True
+        return doc_value == condition
+
     def find(self, filt=None):
         filt = filt or {}
-        docs = [doc for doc in self._docs.values() if all(doc.get(k) == v for k, v in filt.items())]
+        docs = [doc for doc in self._docs.values() if all(self._matches(doc.get(k), v) for k, v in filt.items())]
         return FakeCursor(docs)
 
 
@@ -254,16 +272,18 @@ def regular_user(fake_users):
     user_id = ObjectId()
     from datetime import datetime, timezone
 
+    unique_reference_no = "TESTREF1"
     doc = {
         "_id": user_id,
         "username": username,
         "password_hash": password_utils.hash_password(password),
         "status": "active",
         "created_at": datetime.now(timezone.utc),
+        "unique_reference_no": unique_reference_no,
     }
     fake_users._docs[user_id] = doc
 
-    return {"id": str(user_id), "username": username, "password": password}
+    return {"id": str(user_id), "username": username, "password": password, "unique_reference_no": unique_reference_no}
 
 
 @pytest.fixture

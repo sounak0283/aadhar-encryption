@@ -13,10 +13,11 @@ identities.
 import base64
 from datetime import datetime, timezone
 
-from app.crypto import envelope, identity
+from app.config import get_token_hmac_key
+from app.crypto import envelope, identity, token_utils
 from app import db
 from app.providers.identity_provider import load_identity_provider
-from app.services import admin_identity_service, admins_service
+from app.services import admin_identity_service, admins_service, users_service
 
 
 class NoActiveAdminsError(Exception):
@@ -29,9 +30,22 @@ def _mask(number: str) -> str:
 
 
 async def encrypt_and_store(number: str, submitted_by: str) -> tuple[str, str]:
+    lookup_tag = token_utils.compute_lookup_tag(number, get_token_hmac_key())
+
+    existing = await db.containers_collection().find_one({"lookup_tag": lookup_tag})
+    if existing is not None:
+        # Same Aadhaar number as a prior submission (to this deployment) —
+        # return the same reference_id rather than encrypting and storing a
+        # second copy. Mirrors UIDAI's UID Token: stable per (number, entity),
+        # not a fresh identifier every time the same person submits again.
+        return existing["reference_id"], existing["masked_preview"]
+
     admins = await admins_service.list_active()
     if not admins:
         raise NoActiveAdminsError("no active admin exists yet — complete admin registration first")
+
+    submitter = await users_service.get_by_id(submitted_by)
+    unique_reference_no = submitter.get("unique_reference_no") if submitter else None
 
     sender_signing_key = admin_identity_service.load_sender_signing_key()
 
@@ -52,6 +66,7 @@ async def encrypt_and_store(number: str, submitted_by: str) -> tuple[str, str]:
     signature_b64 = base64.b64encode(identity.sign(payload, sender_signing_key)).decode("ascii")
 
     masked_preview = _mask(number)
+    reference_id = token_utils.derive_reference_id(lookup_tag)
     doc = {
         "alg": alg,
         "wrapped_deks": wrapped_deks,
@@ -60,6 +75,9 @@ async def encrypt_and_store(number: str, submitted_by: str) -> tuple[str, str]:
         "created_at": datetime.now(timezone.utc),
         "masked_preview": masked_preview,
         "submitted_by": submitted_by,
+        "lookup_tag": lookup_tag,
+        "reference_id": reference_id,
+        "unique_reference_no": unique_reference_no,
     }
-    result = await db.containers_collection().insert_one(doc)
-    return str(result.inserted_id), masked_preview
+    await db.containers_collection().insert_one(doc)
+    return reference_id, masked_preview

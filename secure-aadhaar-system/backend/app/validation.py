@@ -8,6 +8,8 @@ number is *well-formed*, not that it's a real, issued Aadhaar number.
 # Standard Verhoeff multiplication (D) and permutation (P) tables (RFC-free,
 # widely published algorithm). Self-consistency between generation and
 # validation below is covered by tests; either table alone is meaningless.
+from datetime import datetime, timezone
+
 _D = [
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
@@ -31,6 +33,8 @@ _P = [
     [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
 ]
 _INV = [0, 4, 3, 2, 1, 5, 6, 7, 8, 9]
+
+FRESHNESS_WINDOW_SECONDS = 300  # +/- 5 minutes
 
 
 def _checksum(digits: str) -> int:
@@ -61,3 +65,20 @@ def generate_synthetic_aadhaar(base_11_digits: str) -> str:
         c = _D[c][_P[(i + 1) % 8][int(digit)]]
     check_digit = _INV[c]
     return base_11_digits + str(check_digit)
+
+
+def freshness_error(ts: datetime, window_seconds: int = FRESHNESS_WINDOW_SECONDS) -> str | None:
+    """
+    Replay/freshness check analogous to UIDAI Auth API error codes 561
+    (expired request) and 562 (future-timestamped request): a submission's
+    client-supplied `ts` must fall within `window_seconds` of server time in
+    either direction. Returns None if fresh, else a short machine-readable
+    reason ("request_expired" or "timestamp_in_future").
+    """
+    now = datetime.now(timezone.utc)
+    delta = (now - ts).total_seconds()
+    if delta > window_seconds:
+        return "request_expired"
+    if delta < -window_seconds:
+        return "timestamp_in_future"
+    return None

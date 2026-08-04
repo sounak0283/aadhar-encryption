@@ -3,6 +3,8 @@ Integration tests for /api/admin/register/* (app.routers.admin) — the
 first-admin (master) self-registration flow, through the real router/service
 wiring against fake_admins (never a real database).
 """
+from datetime import datetime, timezone
+
 import pyotp
 
 SETUP_TOKEN = "test-setup-token-abc123"
@@ -94,7 +96,10 @@ def test_full_register_flow_then_login_and_decrypt(client, fake_admins, fake_con
         == 200
     )
 
-    submit_resp = client.post("/api/aadhaar", json={"aadhaar_number": "123456789010"})
+    submit_resp = client.post(
+        "/api/aadhaar",
+        json={"aadhaar_number": "123456789010", "consent": True, "ts": datetime.now(timezone.utc).isoformat()},
+    )
     assert submit_resp.status_code == 200
     reference_id = submit_resp.json()["reference_id"]
 

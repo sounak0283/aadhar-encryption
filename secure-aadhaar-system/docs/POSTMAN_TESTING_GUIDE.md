@@ -3,6 +3,21 @@
 This walks through every API flow end-to-end with exact request/response
 bodies, so you can build a Postman collection and exercise the whole system.
 
+**Don't want to build it by hand?** Import the ready-made collection and
+environment from `docs/postman/`:
+- `secure-aadhaar-system.postman_collection.json`
+- `secure-aadhaar-system.postman_environment.json`
+
+In Postman: **File → Import** both files, select the "Secure Aadhaar System
+(local)" environment in the top-right dropdown, set `base_url` and
+`setup_token` for your machine (see below), and run requests top to bottom
+by folder (Flow A → B → C → D → E). Variables like `reference_id`,
+`registration_token`, and `sub_admin_id` are captured automatically by each
+request's Tests script — only `totp_code` needs manual, just-in-time entry
+since it's a live 6-digit code that rotates every 30 seconds. The rest of
+this file explains the same flows if you'd rather build requests yourself
+or understand what the collection is doing.
+
 ## Before you start
 
 **Auth model: httpOnly session cookies, not bearer tokens.** There is no
@@ -15,10 +30,12 @@ in as a regular user *and* an admin at the same time in one Postman session
 without either one clobbering the other.
 
 **Base URL**: create a Postman environment with a variable
-`base_url = http://localhost:8003` (check `frontend/.env`'s
-`VITE_API_BASE_URL` if this project's backend port has changed) and use
+`base_url = http://localhost:8000` (uvicorn's default when you run
+`uvicorn app.main:app --reload` with no `--port`) and use
 `{{base_url}}/api/...` in every request, so you only ever update it in one
-place.
+place. If your local backend runs on a different port, check
+`frontend/.env`'s `VITE_API_BASE_URL` — the frontend and Postman must point
+at the same running instance.
 
 **Headers**: every `POST` with a JSON body needs `Content-Type: application/json`
 — set this in Postman's Body tab by choosing **raw → JSON**, which adds the
@@ -88,15 +105,27 @@ below the Send button if this happens unexpectedly.
 POST {{base_url}}/api/aadhaar
 Content-Type: application/json
 
-{ "aadhaar_number": "102938475615" }
+{
+  "aadhaar_number": "102938475615",
+  "consent": true,
+  "ts": "2026-08-04T10:15:30Z"
+}
 ```
+`consent` must be exactly `true` (explicit informed consent — there's no
+meaningful default). `ts` must be a timezone-aware ISO-8601 timestamp
+within 5 minutes of the server's clock in either direction — in Postman,
+use the built-in dynamic variable `{{$isoTimestamp}}` in the body instead
+of a hardcoded value so it's always fresh.
+
 Response `200`:
 ```json
-{ "reference_id": "6a6..." }
+{ "reference_id": "6a6...", "masked_preview": "XXXX-XXXX-5615" }
 ```
 Save `reference_id` — you'll need it in Flow C. Errors: `401` if not
-logged in, `400` if the number fails validation, `503` if no admin has
-been registered on this deployment yet (nothing exists to wrap the
+logged in, `400` if the number fails the Verhoeff checksum or `ts` is
+stale/future (`detail`: `"request_expired"` or `"timestamp_in_future"`),
+`422` if `consent` isn't `true` or `ts` has no timezone, `503` if no admin
+has been registered on this deployment yet (nothing exists to wrap the
 encryption key to).
 
 ### A5. View your own submission history
@@ -316,6 +345,71 @@ access actually works, not just that `containers_granted` said it would.
 
 ---
 
+## Flow E — Audit report, PDF export, and audit log
+
+Any authenticated admin (master or sub) can run these — no special role
+needed. Continue using the `admin_session` from Flow C or D.
+
+### E1. Date-range hit report (JSON)
+```
+GET {{base_url}}/api/admin/audit-report?from_date=2026-08-01&to_date=2026-08-31
+```
+Response `200`:
+```json
+[
+  { "date": "2026-08-04", "reference_id": "6a6...", "masked_aadhaar_no": "XXXX-XXXX-5615", "request_datetime": "2026-08-04T10:15:31Z" },
+  { "date": "2026-08-04", "reference_id": "6a6...", "masked_aadhaar_no": "XXXX-XXXX-5615", "request_datetime": "2026-08-04T14:02:09Z" },
+  { "date": "2026-08-05", "reference_id": null, "masked_aadhaar_no": null, "request_datetime": null }
+]
+```
+**One row per hit, not per record** — the first two rows above are the
+*same* Aadhaar record (same `reference_id`): one row for its submission,
+one for a later decrypt, each with its own `request_datetime`. Decrypt it
+again and a third row appears. Dates with zero hits still get a single
+placeholder row (all fields `null` except `date`), so you can see there's
+no gap in coverage. Login/logout events aren't tied to a record and never
+appear here — for those, see E3.
+Errors: `400` if `from_date` is after `to_date`.
+
+### E2. Same report as a PDF
+```
+GET {{base_url}}/api/admin/audit-report/pdf?from_date=2026-08-01&to_date=2026-08-31
+```
+Response `200`, binary PDF (`Content-Type: application/pdf`,
+`Content-Disposition: attachment; filename="audit-report_..._....pdf"`). In
+Postman, use the dropdown next to **Send** → **Send and Download** to save
+it to disk rather than viewing raw bytes in the response pane.
+
+Optionally add `&columns=date,masked_aadhaar_no,request_datetime` to pick a
+subset of columns instead of all four (`date`, `reference_id`,
+`masked_aadhaar_no`, `request_datetime`). Errors: `400` for an invalid
+range, an unknown column name, or an empty `columns` value.
+
+### E3. Audit log — every login/logout/submit/decrypt event
+```
+GET {{base_url}}/api/admin/audit-log?from_date=2026-08-01&to_date=2026-08-31
+```
+Response `200`:
+```json
+[
+  { "ts": "2026-08-04T10:21:47Z", "action": "decrypt", "result": "success", "username": "admin", "container_id": "6a6..." },
+  { "ts": "2026-08-04T10:20:03Z", "action": "admin_login", "result": "success", "username": "admin", "container_id": null },
+  { "ts": "2026-08-04T10:15:31Z", "action": "submit", "result": "success", "username": "alice", "container_id": "6a6..." },
+  { "ts": "2026-08-04T10:14:51Z", "action": "user_login", "result": "success", "username": "alice", "container_id": null }
+]
+```
+Newest first. This is the endpoint to reach for when the submission-only
+audit report above isn't enough — it has a real timestamp for every
+security-relevant action, not just submissions. `action` is one of
+`admin_login`, `admin_logout`, `user_login`, `user_logout`, `submit`,
+`decrypt`; `result` is `success` or a short failure reason
+(`invalid_credentials`, `invalid_aadhaar_number`, `request_expired`,
+`timestamp_in_future`, `no_active_admins`, `bad_signature`,
+`crypto_error`). Run this after exercising Flows A–D so there's actually
+something to see. Errors: `400` if `from_date` is after `to_date`.
+
+---
+
 ## Chaining requests automatically (optional but worth doing)
 
 Rather than copy-pasting `registration_token` / `reference_id` /
@@ -361,6 +455,9 @@ later requests' URLs/bodies.
 | POST | `/api/admin/admins/start` | admin session, master only | D1 |
 | POST | `/api/admin/admins/confirm` | admin session, master only | D2 |
 | GET | `/api/admin/admins` | admin session, master only | D3 |
+| GET | `/api/admin/audit-report` | admin session | E1 |
+| GET | `/api/admin/audit-report/pdf` | admin session | E2 |
+| GET | `/api/admin/audit-log` | admin session | E3 |
 | GET | `/health` | none | — |
 
 ## Status codes you'll see

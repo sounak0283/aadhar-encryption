@@ -1,0 +1,27 @@
+INFO:     ::1:59172 - "GET /health HTTP/1.1" 200 OK
+INFO:     ::1:59174 - "POST /api/admin/login HTTP/1.1" 200 OK
+INFO:     ::1:59178 - "POST /api/aadhaar HTTP/1.1" 401 Unauthorized
+INFO:     ::1:59179 - "POST /api/admin/submissions//decrypt HTTP/1.1" 404 Not Found
+INFO:     ::1:59180 - "GET /api/admin/submissions HTTP/1.1" 200 OK
+INFO:     ::1:59182 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     ::1:59183 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:59184 - "POST /api/admin/submissions/CDDD165ED00494DDEFEFB36377DC720B77E2472C3272/decrypt HTTP/1.1" 200 OK
+INFO:     ::1:56446 - "POST /api/aadhaar HTTP/1.1" 401 Unauthorized
+INFO:     ::1:59105 - "POST /api/auth/signup HTTP/1.1" 200 OK
+INFO:     ::1:59108 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     ::1:63209 - "POST /api/auth/login HTTP/1.1" 422 Unprocessable Entity
+INFO:     ::1:49533 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:50347 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:50347 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:50347 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:50347 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:54184 - "POST /api/auth/signup HTTP/1.1" 200 OK
+INFO:     ::1:54187 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     ::1:63237 - "POST /api/auth/login HTTP/1.1" 422 Unprocessable Entity
+INFO:     ::1:50492 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:51097 - "GET /api/admin/audit-report/pdf?from_date=2026-07-25&to_date=2026-07-29 HTTP/1.1" 401 Unauthorized
+INFO:     ::1:51100 - "GET /api/admin/login HTTP/1.1" 405 Method Not Allowed
+INFO:     ::1:64829 - "POST /api/admin/login HTTP/1.1" 200 OK
+INFO:     ::1:53883 - "POST /api/admin/audit-report/pdf?from_date=2026-07-25&to_date=2026-07-29 HTTP/1.1" 405 Method Not Allowed
+INFO:     ::1:53886 - "GET /api/admin/audit-report/pdf?from_date=2026-07-25&to_date=2026-07-30 HTTP/1.1" 200 OK
+INFO:     ::1:64314 - "GET /api/admin/audit-report/pdf?from_date=2026-07-25&to_date=2026-07-30 HTTP/1.1" 401 Unauthorized

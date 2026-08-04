@@ -1,0 +1,15 @@
+INFO:     ::1:58361 - "GET /health HTTP/1.1" 200 OK
+INFO:     ::1:58362 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     ::1:57058 - "POST /api/admin/register/start HTTP/1.1" 200 OK
+INFO:     ::1:57062 - "POST /api/admin/register/confirm HTTP/1.1" 200 OK
+INFO:     ::1:57063 - "POST /api/admin/login HTTP/1.1" 200 OK
+INFO:     ::1:57064 - "GET /api/admin/me HTTP/1.1" 200 OK
+INFO:     ::1:57065 - "POST /api/auth/signup HTTP/1.1" 200 OK
+INFO:     ::1:57066 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     ::1:57071 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:57072 - "POST /api/aadhaar HTTP/1.1" 200 OK
+INFO:     ::1:57073 - "POST /api/aadhaar HTTP/1.1" 422 Unprocessable Entity
+INFO:     ::1:57074 - "POST /api/aadhaar HTTP/1.1" 400 Bad Request
+INFO:     ::1:57075 - "POST /api/admin/submissions/6a6850e03a4f34129ba611e1/decrypt HTTP/1.1" 200 OK
+INFO:     ::1:58067 - "GET /health HTTP/1.1" 200 OK
+INFO:     ::1:59031 - "GET /api/admin/register/status HTTP/1.1" 200 OK

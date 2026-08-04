@@ -1,0 +1,163 @@
+INFO:     Started server process [2532]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://localhost:8103 (Press CTRL+C to quit)
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 401, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\fastapi\applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\errors.py", line 187, in __call__
+    raise exc
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\fastapi\routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\fastapi\routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\slowapi\extension.py", line 734, in async_wrapper
+    response = await func(*args, **kwargs)  # type: ignore
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\app\routers\public.py", line 30, in submit_aadhaar
+    reference_id, masked_preview = await submission_service.encrypt_and_store(
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\app\services\submission_service.py", line 41, in encrypt_and_store
+    return existing["reference_id"], existing["masked_preview"]
+           ~~~~~~~~^^^^^^^^^^^^^^^^
+KeyError: 'reference_id'
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 401, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\fastapi\applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\errors.py", line 187, in __call__
+    raise exc
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\fastapi\routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\fastapi\routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\slowapi\extension.py", line 734, in async_wrapper
+    response = await func(*args, **kwargs)  # type: ignore
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\app\routers\public.py", line 30, in submit_aadhaar
+    reference_id, masked_preview = await submission_service.encrypt_and_store(
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\app\services\submission_service.py", line 41, in encrypt_and_store
+    return existing["reference_id"], existing["masked_preview"]
+           ~~~~~~~~^^^^^^^^^^^^^^^^
+KeyError: 'reference_id'
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 401, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 70, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\fastapi\applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\errors.py", line 187, in __call__
+    raise exc
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\errors.py", line 165, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\starlette\routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\fastapi\routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\venv\Lib\site-packages\fastapi\routing.py", line 212, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aadhar-encryption\secure-aadhaar-system\backend-1\app\routers\admin.py", line 225, in list_submissions
+    id=doc["reference_id"], created_at=db.as_utc(doc["created_at"]), masked_preview=doc["masked_preview"]
+       ~~~^^^^^^^^^^^^^^^^
+KeyError: 'reference_id'
